@@ -1,5 +1,22 @@
 {
   "devDependencies": {
     "@cap-js/sqlite": "^3.1.1"
+  },
+  "cds": {
+    "requires": {
+      "auth": {
+        "kind": "mocked",
+        "users": {
+          "alice": {
+            "password": "alice",
+            "roles": ["Comprador"]
+          },
+          "bob": {
+            "password": "bob",
+            "roles": ["Aprobador"]
+          }
+        }
+      }
+    }
   }
 }

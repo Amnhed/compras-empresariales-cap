@@ -1,5 +1,10 @@
-### Crear Orden de Herramientas y Equipamiento
+# Usuarios mock (Basic). alice = Comprador, bob = Aprobador.
+# alice:alice → YWxpY2U6YWxpY2U=
+# bob:bob     → Ym9iOmJvYg==
+
+### Crear orden. El total de este ejemplo supera 15000, así que queda retenida.
 POST http://localhost:4004/odata/v4/compras/OrdenesCompra
+Authorization: Basic YWxpY2U6YWxpY2U=
 Content-Type: application/json
 
 {
@@ -18,18 +23,33 @@ Content-Type: application/json
     ]
 }
 
-### Leer órdenes (importeTotal se calcula en el after READ)
+### Leer órdenes. importeTotal se calcula en el after READ.
 GET http://localhost:4004/odata/v4/compras/OrdenesCompra?$expand=posiciones
+Authorization: Basic YWxpY2U6YWxpY2U=
 
-### Aprobar la orden retenida. Sustituye el UUID por el que devolvió el POST.
-### Con borrador la clave OData incluye IsActiveEntity.
+### Actualizar el folio. Sustituye el UUID. Solo si el estado sigue pendiente o retenido.
+PATCH http://localhost:4004/odata/v4/compras/OrdenesCompra(ID=00000000-0000-0000-0000-000000000000,IsActiveEntity=true)
+Authorization: Basic YWxpY2U6YWxpY2U=
+Content-Type: application/json
+
+{
+    "folio": "OC-TALLER-002"
+}
+
+### Borrar. Misma regla de estado. Sustituye el UUID.
+DELETE http://localhost:4004/odata/v4/compras/OrdenesCompra(ID=00000000-0000-0000-0000-000000000000,IsActiveEntity=true)
+Authorization: Basic YWxpY2U6YWxpY2U=
+
+### Aprobar la orden retenida. Lo hace bob. Sustituye el UUID.
 POST http://localhost:4004/odata/v4/compras/OrdenesCompra(ID=00000000-0000-0000-0000-000000000000,IsActiveEntity=true)/ComprasService.aprobar
+Authorization: Basic Ym9iOmJvYg==
 Content-Type: application/json
 
 {}
 
-### Rechazar la orden retenida. Sustituye el UUID por el que devolvió el POST.
+### Rechazar la orden retenida. Lo hace bob. Sustituye el UUID.
 POST http://localhost:4004/odata/v4/compras/OrdenesCompra(ID=00000000-0000-0000-0000-000000000000,IsActiveEntity=true)/ComprasService.rechazar
+Authorization: Basic Ym9iOmJvYg==
 Content-Type: application/json
 
 {}
