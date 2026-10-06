@@ -38,18 +38,26 @@ module.exports = cds.service.impl(async function () {
 
     // after READ corre cuando la fila ya se leyó y antes de serializar el JSON.
     // importeTotal no está en SQLite; hay que rellenarlo en cada respuesta.
-    this.after('READ', OrdenesCompra, async (ordenes) => {
+    // El borrador es otra entidad (OrdenesCompra.drafts): el mismo cálculo se registra ahí.
+    const calcularImporte = async (ordenes, req) => {
         const registros = Array.isArray(ordenes) ? ordenes : [ordenes];
+        // En el after READ de un borrador, IsActiveEntity todavía no viene en la fila.
+        // La entidad del request sí termina en ".drafts".
+        const esBorrador = req?.target?.name?.endsWith('.drafts');
+        const fuente = esBorrador ? Posiciones.drafts : Posiciones;
 
         for (const orden of registros) {
             if (!orden) continue;
+            // Con $expand las posiciones ya vienen en la fila. Si no, se leen de la tabla que corresponde.
             const items = Array.isArray(orden.posiciones)
                 ? orden.posiciones
-                : await SELECT.from(Posiciones).where({ orden_ID: orden.ID });
+                : await SELECT.from(fuente).where({ orden_ID: orden.ID });
             const suma = items.reduce((acc, item) => acc + (Number(item.cantidad) * Number(item.precioUnitario)), 0);
             orden.importeTotal = Number(suma.toFixed(2));
         }
-    });
+    };
+    this.after('READ', OrdenesCompra, calcularImporte);
+    this.after('READ', OrdenesCompra.drafts, calcularImporte);
 
     // before UPDATE corre antes del UPDATE en la base.
     // Leemos el estado guardado: req.data puede traer solo los campos que cambiaron.

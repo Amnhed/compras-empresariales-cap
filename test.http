@@ -2,7 +2,7 @@
 # alice:alice → YWxpY2U6YWxpY2U=
 # bob:bob     → Ym9iOmJvYg==
 
-### Crear orden. El total de este ejemplo supera 15000, así que queda retenida.
+### 1. Abrir el registro. Esto crea un borrador; todavía no valida ni asigna el estado final.
 POST http://localhost:4004/odata/v4/compras/OrdenesCompra
 Authorization: Basic YWxpY2U6YWxpY2U=
 Content-Type: application/json
@@ -23,7 +23,15 @@ Content-Type: application/json
     ]
 }
 
-### Leer órdenes. importeTotal se calcula en el after READ.
+### 2. Guardar el registro. Sustituye el UUID por el ID del borrador.
+### Aquí corre el before CREATE: este ejemplo supera 15000 y queda retenido.
+POST http://localhost:4004/odata/v4/compras/OrdenesCompra(ID=00000000-0000-0000-0000-000000000000,IsActiveEntity=false)/ComprasService.draftActivate
+Authorization: Basic YWxpY2U6YWxpY2U=
+Content-Type: application/json
+
+{}
+
+### Leer órdenes activas. importeTotal se calcula en el after READ.
 GET http://localhost:4004/odata/v4/compras/OrdenesCompra?$expand=posiciones
 Authorization: Basic YWxpY2U6YWxpY2U=
 
