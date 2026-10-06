@@ -17,3 +17,18 @@ Content-Type: application/json
         }
     ]
 }
+
+### Leer órdenes (importeTotal se calcula en el after READ)
+GET http://localhost:4004/odata/v4/compras/OrdenesCompra?$expand=posiciones
+
+### Aprobar la orden retenida. Sustituye el ID por el que devolvió el POST.
+POST http://localhost:4004/odata/v4/compras/OrdenesCompra(ID)/ComprasService.aprobar
+Content-Type: application/json
+
+{}
+
+### Rechazar la orden retenida. Sustituye el ID por el que devolvió el POST.
+POST http://localhost:4004/odata/v4/compras/OrdenesCompra(ID)/ComprasService.rechazar
+Content-Type: application/json
+
+{}

@@ -3,6 +3,8 @@ const cds = require('@sap/cds');
 // Estados que el servicio escribe. El esquema solo declara el campo.
 const RETENIDA = 'Retenida - Requiere Revisión';
 const APROBADA_AUTO = 'Aprobada Automáticamente';
+const APROBADA = 'Aprobada';
+const RECHAZADA = 'Rechazada';
 const UMBRAL = 15000;
 
 // Una orden cerrada ya no se edita ni se borra.
@@ -60,6 +62,16 @@ module.exports = cds.service.impl(async function () {
     this.before('DELETE', OrdenesCompra, async (req) => {
         await exigirEditable(req, OrdenesCompra, 'borrar');
     });
+
+    // on sustituye la implementación genérica. Una action no tiene INSERT propio:
+    // el handler decide el cambio de estado y hace el UPDATE.
+    this.on('aprobar', OrdenesCompra, async (req) => {
+        await cambiarEstado(req, OrdenesCompra, APROBADA, 'aprobar');
+    });
+
+    this.on('rechazar', OrdenesCompra, async (req) => {
+        await cambiarEstado(req, OrdenesCompra, RECHAZADA, 'rechazar');
+    });
 });
 
 // Prefiere las posiciones que vinieron en la petición. Si no vienen, las busca por el ID de la orden.
@@ -69,6 +81,17 @@ async function posicionesDe(orden, Posiciones) {
     }
     if (!orden.ID) return [];
     return SELECT.from(Posiciones).where({ orden_ID: orden.ID });
+}
+
+// aprobar y rechazar solo aplican a una orden que el alta dejó retenida por monto.
+async function cambiarEstado(req, OrdenesCompra, estadoNuevo, accion) {
+    const id = req.params?.[0]?.ID || req.params?.[0];
+    const actual = await SELECT.one.from(OrdenesCompra).where({ ID: id });
+    if (!actual) return req.reject(404, 'Orden no encontrada.');
+    if (actual.estado !== RETENIDA) {
+        return req.reject(409, `Solo se puede ${accion} una orden retenida.`);
+    }
+    await UPDATE(OrdenesCompra).set({ estado: estadoNuevo }).where({ ID: id });
 }
 
 async function exigirEditable(req, OrdenesCompra, accion) {
