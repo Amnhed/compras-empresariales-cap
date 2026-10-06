@@ -21,14 +21,15 @@ Content-Type: application/json
 ### Leer órdenes (importeTotal se calcula en el after READ)
 GET http://localhost:4004/odata/v4/compras/OrdenesCompra?$expand=posiciones
 
-### Aprobar la orden retenida. Sustituye el ID por el que devolvió el POST.
-POST http://localhost:4004/odata/v4/compras/OrdenesCompra(ID)/ComprasService.aprobar
+### Aprobar la orden retenida. Sustituye el UUID por el que devolvió el POST.
+### Con borrador la clave OData incluye IsActiveEntity.
+POST http://localhost:4004/odata/v4/compras/OrdenesCompra(ID=00000000-0000-0000-0000-000000000000,IsActiveEntity=true)/ComprasService.aprobar
 Content-Type: application/json
 
 {}
 
-### Rechazar la orden retenida. Sustituye el ID por el que devolvió el POST.
-POST http://localhost:4004/odata/v4/compras/OrdenesCompra(ID)/ComprasService.rechazar
+### Rechazar la orden retenida. Sustituye el UUID por el que devolvió el POST.
+POST http://localhost:4004/odata/v4/compras/OrdenesCompra(ID=00000000-0000-0000-0000-000000000000,IsActiveEntity=true)/ComprasService.rechazar
 Content-Type: application/json
 
 {}
