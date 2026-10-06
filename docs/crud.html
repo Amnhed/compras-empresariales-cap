@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CRUD y handlers</title>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; margin: 0; background: #f4f6f8; color: #1c2430; line-height: 1.55; }
+    header { background: #0a6ed1; color: #fff; padding: 1.2rem 1.5rem; }
+    nav { display: flex; flex-wrap: wrap; gap: .75rem; padding: .8rem 1.5rem; background: #fff; border-bottom: 1px solid #d9e2ec; }
+    nav a { color: #0a6ed1; text-decoration: none; }
+    main { max-width: 52rem; margin: 0 auto; padding: 1.5rem; }
+    pre { background: #1c2430; color: #f4f6f8; padding: 1rem; overflow: auto; border-radius: 8px; }
+    code { font-family: Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <header><h1>CRUD</h1><p>CAP ya inserta, lee, actualiza y borra. <code>srv/compras-service.js</code> solo añade la regla.</p></header>
+  <nav>
+    <a href="index.html">Arquitectura</a>
+    <a href="modelo-cds.html">Modelo CDS</a>
+    <a href="servicio-odata.html">Servicio OData</a>
+    <a href="crud.html">CRUD</a>
+    <a href="acciones.html">Acciones</a>
+    <a href="seguridad.html">Seguridad</a>
+  </nav>
+  <main>
+    <p><code>before</code> corre antes de tocar la base y puede rechazar la petición. <code>after</code> corre cuando la fila ya se leyó y puede completar la respuesta. <code>on</code> reemplaza la operación; en el CRUD de este proyecto no hace falta, porque el genérico de CAP basta.</p>
+    <h2>Crear, al guardar el borrador</h2>
+    <p>Exige al menos un artículo, cantidad y precio mayores a cero. Si el total pasa de 15000, el estado queda <code>Retenida - Requiere Revisión</code>. Si no, <code>Aprobada Automáticamente</code>. El cliente no envía el estado final.</p>
+    <pre><code>this.before('CREATE', OrdenesCompra, async (req) =&gt; {
+    const orden = req.data;
+    const posiciones = await posicionesDe(orden, Posiciones);
+    if (posiciones.length === 0) {
+        return req.reject(400, 'Una orden debe tener artículos.');
+    }
+    // ... suma cantidad * precio ...
+    orden.estado = totalAcumulado &gt; UMBRAL ? RETENIDA : APROBADA_AUTO;
+});</code></pre>
+    <h2>Leer</h2>
+    <p><code>importeTotal</code> se calcula en <code>after READ</code>. El borrador es la entidad <code>OrdenesCompra.drafts</code>, así que el mismo cálculo está registrado también ahí. Si la petición no trajo <code>$expand=posiciones</code>, el handler lee la tabla activa o la de borrador.</p>
+    <h2>Editar y borrar</h2>
+    <p>Solo si el estado guardado es <code>Pendiente</code> o <code>Retenida - Requiere Revisión</code>. Una orden aprobada o rechazada responde 409. Se lee el estado de la base porque <code>req.data</code> en un PATCH puede traer únicamente el folio nuevo.</p>
+    <pre><code>this.before('UPDATE', OrdenesCompra, async (req) =&gt; {
+    await exigirEditable(req, OrdenesCompra, 'editar');
+});
+this.before('DELETE', OrdenesCompra, async (req) =&gt; {
+    await exigirEditable(req, OrdenesCompra, 'borrar');
+});</code></pre>
+  </main>
+</body>
+</html>

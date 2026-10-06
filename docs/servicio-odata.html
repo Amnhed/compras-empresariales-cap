@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Servicio y OData</title>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; margin: 0; background: #f4f6f8; color: #1c2430; line-height: 1.55; }
+    header { background: #0a6ed1; color: #fff; padding: 1.2rem 1.5rem; }
+    nav { display: flex; flex-wrap: wrap; gap: .75rem; padding: .8rem 1.5rem; background: #fff; border-bottom: 1px solid #d9e2ec; }
+    nav a { color: #0a6ed1; text-decoration: none; }
+    main { max-width: 52rem; margin: 0 auto; padding: 1.5rem; }
+    pre { background: #1c2430; color: #f4f6f8; padding: 1rem; overflow: auto; border-radius: 8px; }
+    code { font-family: Consolas, monospace; }
+    table { border-collapse: collapse; width: 100%; background: #fff; }
+    th, td { border: 1px solid #d9e2ec; padding: .45rem .6rem; text-align: left; }
+  </style>
+</head>
+<body>
+  <header><h1>Servicio y OData</h1><p>La proyección es el contrato. OData V4 es cómo viaja por HTTP.</p></header>
+  <nav>
+    <a href="index.html">Arquitectura</a>
+    <a href="modelo-cds.html">Modelo CDS</a>
+    <a href="servicio-odata.html">Servicio OData</a>
+    <a href="crud.html">CRUD</a>
+    <a href="acciones.html">Acciones</a>
+    <a href="seguridad.html">Seguridad</a>
+  </nav>
+  <main>
+    <p><code>sap.compras.OrdenesCompra</code> es la tabla. <code>ComprasService.OrdenesCompra</code> es lo que el cliente ve. La proyección copia la entidad al servicio. CAP publica ese servicio en <code>/odata/v4/compras</code> sin que escribas un controlador por cada URL.</p>
+    <p><code>@odata.draft.enabled</code> añade el borrador. Crear en Fiori no inserta la orden definitiva: abre un borrador y Guardar lo activa.</p>
+    <pre><code>service ComprasService @(requires: 'authenticated-user') {
+    @odata.draft.enabled
+    entity OrdenesCompra as projection on db.OrdenesCompra actions {
+        action aprobar();
+        action rechazar();
+    };
+    entity Posiciones as projection on db.Posiciones;
+}</code></pre>
+    <p><code>GET /odata/v4/compras/$metadata</code> describe entidades, claves, acciones y anotaciones de UI. Fiori arma la lista con eso.</p>
+    <table>
+      <tr><th>Operación</th><th>HTTP</th><th>Qué pasa</th></tr>
+      <tr><td>Abrir registro</td><td><code>POST /OrdenesCompra</code></td><td>Crea el borrador. No valida todavía.</td></tr>
+      <tr><td>Guardar</td><td><code>POST .../draftActivate</code></td><td>Corre <code>before CREATE</code> y persiste cabecera y artículos.</td></tr>
+      <tr><td>Leer</td><td><code>GET /OrdenesCompra</code></td><td>Lista las activas. <code>$expand=posiciones</code> trae los artículos en la misma respuesta.</td></tr>
+      <tr><td>Filtrar</td><td><code>$filter=estado eq 'Aprobada'</code></td><td>OData traduce el filtro a la consulta.</td></tr>
+      <tr><td>Editar</td><td><code>PATCH /OrdenesCompra(ID=...,IsActiveEntity=true)</code></td><td>Corre <code>before UPDATE</code>.</td></tr>
+      <tr><td>Borrar</td><td><code>DELETE</code> sobre la misma clave</td><td>Corre <code>before DELETE</code>. La composición borra las posiciones.</td></tr>
+    </table>
+    <p>Con borrador la clave tiene dos partes: el UUID y <code>IsActiveEntity</code>. <code>false</code> es el borrador; <code>true</code> es la orden guardada. Las peticiones de ejemplo están en <code>test.http</code>.</p>
+  </main>
+</body>
+</html>

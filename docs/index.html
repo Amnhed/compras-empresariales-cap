@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arquitectura CAP — órdenes de compra</title>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; margin: 0; background: #f4f6f8; color: #1c2430; line-height: 1.55; }
+    header { background: #0a6ed1; color: #fff; padding: 1.2rem 1.5rem; }
+    nav { display: flex; flex-wrap: wrap; gap: .75rem; padding: .8rem 1.5rem; background: #fff; border-bottom: 1px solid #d9e2ec; }
+    nav a { color: #0a6ed1; text-decoration: none; }
+    main { max-width: 52rem; margin: 0 auto; padding: 1.5rem; }
+    .flow { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: 1rem 0; }
+    .box { background: #fff; border: 1px solid #d9e2ec; border-radius: 8px; padding: .55rem .75rem; }
+    .arrow { color: #5b6b7c; }
+    h1, h2 { line-height: 1.25; }
+    a { color: #0a6ed1; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Arquitectura de este backend</h1>
+    <p>CAP separa el modelo, el contrato OData y las reglas. Fiori no habla con SQLite.</p>
+  </header>
+  <nav>
+    <a href="index.html">Arquitectura</a>
+    <a href="modelo-cds.html">Modelo CDS</a>
+    <a href="servicio-odata.html">Servicio OData</a>
+    <a href="crud.html">CRUD</a>
+    <a href="acciones.html">Acciones</a>
+    <a href="seguridad.html">Seguridad</a>
+  </nav>
+  <main>
+    <h2>Las capas</h2>
+    <div class="flow">
+      <span class="box">Fiori o test.http</span>
+      <span class="arrow">→ OData V4 →</span>
+      <span class="box">ComprasService</span>
+      <span class="arrow">→</span>
+      <span class="box">usuario mock y @restrict</span>
+      <span class="arrow">→</span>
+      <span class="box">before / on / after</span>
+      <span class="arrow">→</span>
+      <span class="box">SQLite</span>
+    </div>
+    <p><code>db/schema.cds</code> describe qué se guarda. <code>srv/compras-service.cds</code> dice qué ve el cliente. CAP genera el CRUD y lo publica en <code>/odata/v4/compras</code>. El JavaScript solo existe donde hay una regla que CAP no puede adivinar.</p>
+    <h2>Un recorrido, registrar una orden</h2>
+    <ol>
+      <li>Fiori pulsa Crear. Un <code>POST</code> abre un borrador. Todavía no valida.</li>
+      <li>El usuario escribe el folio y los artículos. Cada cambio es un <code>PATCH</code> del borrador.</li>
+      <li>Guardar llama a <code>draftActivate</code>. Ahí corre <code>before CREATE</code>: exige artículos y asigna el estado según el monto.</li>
+      <li>La respuesta JSON vuelve por OData. <code>after READ</code> rellena <code>importeTotal</code>, que no tiene columna en la base.</li>
+      <li>Antes de los pasos 1 a 4, CAP identifica a <code>alice</code> o <code>bob</code>. Si el rol no alcanza, el handler no se ejecuta.</li>
+    </ol>
+    <p>El detalle de cada capa está en las páginas de esta carpeta. La pantalla está documentada en el proyecto <code>compras-fiori-ui/docs</code>.</p>
+  </main>
+</body>
+</html>

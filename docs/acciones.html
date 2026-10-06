@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acciones aprobar y rechazar</title>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; margin: 0; background: #f4f6f8; color: #1c2430; line-height: 1.55; }
+    header { background: #0a6ed1; color: #fff; padding: 1.2rem 1.5rem; }
+    nav { display: flex; flex-wrap: wrap; gap: .75rem; padding: .8rem 1.5rem; background: #fff; border-bottom: 1px solid #d9e2ec; }
+    nav a { color: #0a6ed1; text-decoration: none; }
+    main { max-width: 52rem; margin: 0 auto; padding: 1.5rem; }
+    pre { background: #1c2430; color: #f4f6f8; padding: 1rem; overflow: auto; border-radius: 8px; }
+    code { font-family: Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <header><h1>Acciones</h1><p>Aprobar y rechazar no son un PATCH del campo estado. Son operaciones de negocio.</p></header>
+  <nav>
+    <a href="index.html">Arquitectura</a>
+    <a href="modelo-cds.html">Modelo CDS</a>
+    <a href="servicio-odata.html">Servicio OData</a>
+    <a href="crud.html">CRUD</a>
+    <a href="acciones.html">Acciones</a>
+    <a href="seguridad.html">Seguridad</a>
+  </nav>
+  <main>
+    <p>En el servicio se declaran ligadas a la orden. En HTTP son un <code>POST</code> a la acción, no un <code>PATCH</code>:</p>
+    <pre><code>POST /odata/v4/compras/OrdenesCompra(ID=&lt;uuid&gt;,IsActiveEntity=true)/ComprasService.aprobar
+POST /odata/v4/compras/OrdenesCompra(ID=&lt;uuid&gt;,IsActiveEntity=true)/ComprasService.rechazar</code></pre>
+    <p>El handler <code>on</code> sustituye la implementación genérica. Solo acepta una orden en <code>Retenida - Requiere Revisión</code>. Aprobar la deja en <code>Aprobada</code>. Rechazar la deja en <code>Rechazada</code>. Una orden aprobada automáticamente no pasa por aquí: el monto no llegó al umbral.</p>
+    <pre><code>this.on('aprobar', OrdenesCompra, async (req) =&gt; {
+    await cambiarEstado(req, OrdenesCompra, APROBADA, 'aprobar');
+});
+this.on('rechazar', OrdenesCompra, async (req) =&gt; {
+    await cambiarEstado(req, OrdenesCompra, RECHAZADA, 'rechazar');
+});</code></pre>
+    <p>Fiori muestra los botones porque <code>srv/compras-ui.cds</code> anota <code>UI.DataFieldForAction</code> en la lista y en la cabecera. Quién puede pulsarlos lo decide el rol, no la anotación. Eso está en la página de seguridad.</p>
+  </main>
+</body>
+</html>

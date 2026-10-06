@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Modelo CDS</title>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; margin: 0; background: #f4f6f8; color: #1c2430; line-height: 1.55; }
+    header { background: #0a6ed1; color: #fff; padding: 1.2rem 1.5rem; }
+    nav { display: flex; flex-wrap: wrap; gap: .75rem; padding: .8rem 1.5rem; background: #fff; border-bottom: 1px solid #d9e2ec; }
+    nav a { color: #0a6ed1; text-decoration: none; }
+    main { max-width: 52rem; margin: 0 auto; padding: 1.5rem; }
+    pre { background: #1c2430; color: #f4f6f8; padding: 1rem; overflow: auto; border-radius: 8px; }
+    code { font-family: Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <header><h1>Modelo CDS</h1><p>Archivo <code>db/schema.cds</code>. CDS no es la base ni el protocolo: es el lenguaje del modelo.</p></header>
+  <nav>
+    <a href="index.html">Arquitectura</a>
+    <a href="modelo-cds.html">Modelo CDS</a>
+    <a href="servicio-odata.html">Servicio OData</a>
+    <a href="crud.html">CRUD</a>
+    <a href="acciones.html">Acciones</a>
+    <a href="seguridad.html">Seguridad</a>
+  </nav>
+  <main>
+    <p>CAP lee este archivo al arrancar y crea las tablas en SQLite. El namespace <code>sap.compras</code> evita chocar con otros modelos.</p>
+    <ul>
+      <li><code>cuid</code> agrega la clave <code>ID</code>, un UUID.</li>
+      <li><code>managed</code> agrega quién y cuándo creó o cambió la fila (<code>createdAt</code>, <code>createdBy</code>, <code>modifiedAt</code>, <code>modifiedBy</code>).</li>
+      <li>La asociación apunta de la posición hacia la orden. La composición dice que esas posiciones no viven solas: si se borra la orden, se borran sus artículos.</li>
+      <li><code>virtual</code> declara <code>importeTotal</code> sin columna. El número se calcula al leer.</li>
+    </ul>
+    <pre><code>namespace sap.compras;
+using { cuid, managed } from '@sap/cds/common';
+
+entity OrdenesCompra : cuid, managed {
+    folio       : String(20) not null;
+    estado      : String(30) default 'Pendiente';
+    posiciones  : Composition of many Posiciones on posiciones.orden = $self;
+    virtual importeTotal : Decimal(15, 2);
+}
+
+entity Posiciones : cuid {
+    orden          : Association to OrdenesCompra;
+    material       : String(100) not null;
+    cantidad       : Integer not null;
+    precioUnitario : Decimal(10, 2) not null;
+}</code></pre>
+    <p><code>Pendiente</code> es solo el valor inicial. Al guardar el registro, el handler de CREATE lo reemplaza por aprobada automáticamente o retenida.</p>
+  </main>
+</body>
+</html>
