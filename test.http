@@ -1,0 +1,19 @@
+### Crear Orden de Herramientas y Equipamiento
+POST http://localhost:4004/odata/v4/compras/OrdenesCompra
+Content-Type: application/json
+
+{
+    "folio": "OC-TALLER-001",
+    "posiciones": [
+        {
+            "material": "Soldadora AX-Tech MIG Flux Core Dual",
+            "cantidad": 2,
+            "precioUnitario": 7200.00
+        },
+        {
+            "material": "Extractor de enjambres y ahumador",
+            "cantidad": 1,
+            "precioUnitario": 1200.00
+        }
+    ]
+}
